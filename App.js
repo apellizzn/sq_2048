@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import { sampleSize } from 'lodash';
+import { sampleSize, compact } from 'lodash';
 import { Grid, Row, Col } from 'react-native-easy-grid';
 import GestureRecognizer, { swipeDirections } from 'react-native-swipe-gestures';
 import styles from './styles';
@@ -17,7 +17,6 @@ export default class App extends React.Component {
     super(props);
     const schema = Array(4).fill().map(() => Array(4).fill());
     const empties = this.findEmpties(schema);
-    console.log(empties);
 
     empties.forEach((e) => schema[e.rIndex][e.cIndex] = 2 );
     this.state = {
@@ -37,51 +36,39 @@ export default class App extends React.Component {
 
     }, []), 2);
 
+  squashRow = (row) => {
+    const [first, second, ...rest] = row;
+    if (!first && !second && rest.length === 0) { return []; }
+    if (!first) {
+      return this.squashRow([second, ...rest]);
+
+    } else if (!second) {
+      return [first, ...this.squashRow(rest)];
+
+    } else if (second === first) {
+      return [first * 2, ...this.squashRow(rest)];
+
+    } else {
+      return [first, ...this.squashRow([second, ...rest])];
+    }
+  }
+
   squash = side => {
     const { SWIPE_UP, SWIPE_DOWN, SWIPE_LEFT, SWIPE_RIGHT } = swipeDirections;
     let newSchema = [...this.state.schema];
-    console.log(side);
     switch (side) {
-      case SWIPE_UP:
-        break;
-      case SWIPE_DOWN:
-        break;
       case SWIPE_LEFT:
-        newSchema.forEach((column) => {
-          let i;
-          for (i = column.length - 1; i > -1; i--) {
-            if (column[i] && i - 1 > -1) {
-              if (column[i] === column[i - 1]) {
-                column[i] = undefined;
-                column[i - 1] = column[i - 1] * 2
-              } else if (column[i - 1] === undefined) {
-                column[i - 1] = column[i];
-                column[i] = undefined;
-              }
-            }
-          }
+        newSchema = newSchema.map((row) => {
+          newRow = this.squashRow(compact(row));
+          return [...newRow, ...Array(4 - newRow.length).fill()];
         });
-        break;
-      case SWIPE_RIGHT:
-        newSchema.forEach((column) => {
-          let i;
-          for (i = 0; i < column.length; i++) {
-            if (column[i] && i + 1 < column.length) {
-              if (column[i] === column[i + 1]) {
-                column[i] = undefined;
-                column[i + 1] = column[i + 1] * 2
-              } else if (column[i + 1] === undefined) {
-                column[i + 1] = column[i];
-                column[i] = undefined;
-              }
-            }
-          }
+        const empties = this.findEmpties(newSchema);
+        empties.forEach((e) => newSchema[e.rIndex][e.cIndex] = 2);
+        this.setState({
+          schema: newSchema
         });
         break;
     }
-    const empties = this.findEmpties(newSchema);
-    empties.forEach((e) => newSchema[e.rIndex][e.cIndex] = 2);
-    this.setState({ schema: newSchema });
   }
 
   render() {
