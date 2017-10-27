@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
-import { sampleSize, compact } from 'lodash';
+import { sampleSize, compact, flow } from 'lodash';
 import { Grid, Row, Col } from 'react-native-easy-grid';
 import GestureRecognizer, { swipeDirections } from 'react-native-swipe-gestures';
 import styles from './styles';
@@ -8,16 +8,24 @@ import styles from './styles';
 export default class App extends React.Component {
   constructor(props) {
     super(props);
+    const { SWIPE_UP, SWIPE_DOWN, SWIPE_LEFT, SWIPE_RIGHT } = swipeDirections;
+    this.squashSide = {
+      SWIPE_UP: flow(this.transpose, this.squashLeft, this.transpose),
+      SWIPE_DOWN: flow(this.transpose, this.squashRight, this.transpose),
+      SWIPE_LEFT: this.squashLeft,
+      SWIPE_RIGHT: this.squashRight
+    };
     const schema = Array(4).fill().map(() => Array(4).fill());
     this.addEmpties(schema)
-
     this.state = {
       schema,
     };
   }
 
-  addEmpties = schema =>
+  addEmpties = (schema) => {
     this.findEmpties(schema).forEach(({ rIndex, cIndex }) => schema[rIndex][cIndex] = 2)
+    return schema;
+  }
 
   findEmpties = schema =>
     sampleSize(
@@ -43,25 +51,27 @@ export default class App extends React.Component {
     }
   }
 
+  squashRight = schema => schema.map((row) => {
+    newRow = this.squash(compact(row.reverse()));
+    return [...newRow, ...Array(4 - newRow.length).fill()].reverse();
+  });
+
+  squashLeft = schema => schema.map((row) => {
+    newRow = this.squash(compact(row));
+    return [...newRow, ...Array(4 - newRow.length).fill()];
+  });
+
+  transpose = schema =>
+    Array(schema.length).fill().map((_, rIndex) =>
+      Array(schema.length).fill().map((_, cIndex) => schema[cIndex][rIndex])
+    )
+
   reduceSchema = side => {
-    const { SWIPE_UP, SWIPE_DOWN, SWIPE_LEFT, SWIPE_RIGHT } = swipeDirections;
+    const applyTransform = flow(this.squashSide[side], this.addEmpties);
     let newSchema = [...this.state.schema];
-    switch (side) {
-      case SWIPE_LEFT:
-        newSchema = newSchema.map((row) => {
-          newRow = this.squash(compact(row));
-          return [...newRow, ...Array(4 - newRow.length).fill()];
-        });
-        break;
-      case SWIPE_RIGHT:
-        newSchema = newSchema.map((row) => {
-          newRow = this.squash(compact(row.reverse()));
-          return [...newRow, ...Array(4 - newRow.length).fill()].reverse();
-        });
-        break;
-    }
-    this.addEmpties(newSchema);
-    this.setState({ schema: newSchema});
+    this.setState({
+      schema: side ? applyTransform(newSchema) : newSchema
+    });
   }
 
   render() {
@@ -69,13 +79,13 @@ export default class App extends React.Component {
       <Row key={rIndex} style={styles.noMargin}>
         {
           this.state.schema[rIndex].map((c, cIndex) =>
-          (
-            <Col key={cIndex} style={styles.colMargin}>
-              <View style={styles.cell}>
-                <Text style={styles.cellText}>{c}</Text>
-              </View>
-            </Col>
-          )
+            (
+              <Col key={cIndex} style={styles.colMargin}>
+                <View style={styles.cell}>
+                  <Text style={styles.cellText}>{c}</Text>
+                </View>
+              </Col>
+            )
           )
         }
       </Row>
