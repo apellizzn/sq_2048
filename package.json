@@ -25,6 +25,9 @@
     "react-native": "^0.48.4",
     "react-native-easy-grid": "^0.1.15",
     "react-native-swipe-gestures": "^1.0.2",
+    "react-navigation": "^1.5.8",
+    "react-navigation-redux-helpers": "^1.0.3",
+    "redux": "^3.7.2",
     "watchman": "^0.1.8"
   }
 }
