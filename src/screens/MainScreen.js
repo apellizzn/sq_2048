@@ -1,14 +1,30 @@
 import React from "react";
 import { connect } from "react-redux";
-import { Button } from "react-native";
+import { Button, Text, Image } from "react-native";
 import { Grid, Row, Col } from "react-native-easy-grid";
+import { navigateTo } from "../actions";
 class MainScreen extends React.Component {
   render() {
+    const { user, play, login } = this.props;
+
     return (
       <Grid>
         <Row>
           <Col>
-            <Button title="Play" onPress={this.props.play} />
+            <Image
+              style={{ width: 150, height: 150 }}
+              source={{
+                uri: user.picture.data.url
+              }}
+            />
+          </Col>
+          <Col>
+            <Text>{user.name}</Text>
+          </Col>
+        </Row>
+        <Row>
+          <Col>
+            <Button title="Play" onPress={play} />
           </Col>
         </Row>
       </Grid>
@@ -16,8 +32,13 @@ class MainScreen extends React.Component {
   }
 }
 
-export default connect(null, dispatch => ({
+const mapDispatchToProps = dispatch => ({
   play: () => {
-    dispatch({ type: "NAVIGATE_GAME" });
+    dispatch(navigateTo("Game"));
   }
-}))(MainScreen);
+});
+const mapStateToProps = state => ({
+  user: state.main.user
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(MainScreen);

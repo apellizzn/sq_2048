@@ -1,5 +1,8 @@
 {
   "expo": {
     "sdkVersion": "21.0.0"
-  }
+  },
+  "facebookSchema": "fb593320964350157",
+  "facebookAppId": "593320964350157",
+  "facebookDisplayName": "Expo Test"
 }
